@@ -41,6 +41,10 @@ public final class ReactiveSupport {
         return new WrappedEntityStore<>(store);
     }
 
+    public static void notifyTypesChanged(Set<Type<?>> types) {
+        typeChanges.commitSubject().onNext(types);
+    }
+
     static <T> Observable<ReactiveResult<T>> toObservableResult(final ReactiveResult<T> result) {
         final QueryElement<?> element = result.unwrapQuery();
         // ensure the transaction listener is added in the target data store

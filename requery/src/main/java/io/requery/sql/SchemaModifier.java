@@ -94,7 +94,8 @@ public class SchemaModifier implements ConnectionProvider {
             platform = new PlatformDelegate(connection);
         }
         if (mapping == null) {
-            mapping = new GenericMapping(platform);
+            mapping = new GenericMapping();
+            platform.addMappings(mapping);
         }
         return connection;
     }
@@ -470,8 +471,10 @@ public class SchemaModifier implements ConnectionProvider {
         final Attribute referencedAttribute;
         if (attribute.getReferencedAttribute() != null) {
             referencedAttribute = attribute.getReferencedAttribute().get();
-        } else {
+        } else if (!referenced.getKeyAttributes().isEmpty()) {
             referencedAttribute = referenced.getKeyAttributes().iterator().next();
+        } else {
+            referencedAttribute = null;
         }
 
         if (!forceInline && (!platform.supportsInlineForeignKeyReference() || !forCreateStatement)) {
@@ -561,12 +564,10 @@ public class SchemaModifier implements ConnectionProvider {
                 GenericMapping genericMapping = (GenericMapping) mapping;
                 converter = genericMapping.converterForType(attribute.getClassType());
             }
-            boolean hasLength = fieldType.hasLength() ||
-                    (converter != null && converter.getPersistedSize() != null);
 
             if (attribute.getDefinition() != null && attribute.getDefinition().length() > 0) {
                 qb.append(attribute.getDefinition());
-            } else if (hasLength) {
+            } else if (fieldType.hasLength()) {
 
                 Integer length = attribute.getLength();
                 if (length == null && converter != null) {
@@ -630,7 +631,7 @@ public class SchemaModifier implements ConnectionProvider {
 
     public void createIndex(Connection connection, Attribute<?,?> attribute, TableCreationMode mode) {
         QueryBuilder qb = createQueryBuilder();
-        String name = attribute.getName() + "_index";
+        String name = getIndexDefaultName(attribute);
         createIndex(qb, name, Collections.singleton(attribute), attribute.getDeclaringType(), mode);
         executeSql(connection, qb);
     }
@@ -644,7 +645,7 @@ public class SchemaModifier implements ConnectionProvider {
                 for(String indexName : names) {
                     if (indexName.isEmpty()) {
                         // if no name set create a default one
-                        indexName = attribute.getName() + "_index";
+                        indexName = getIndexDefaultName(attribute);
                     }
                     Set<Attribute<?, ?>> indexColumns = indexes.get(indexName);
                     if (indexColumns == null) {
@@ -659,6 +660,10 @@ public class SchemaModifier implements ConnectionProvider {
             createIndex(qb, entry.getKey(), entry.getValue(), type, mode);
             executeSql(connection, qb);
         }
+    }
+
+    private String getIndexDefaultName(Attribute<?,?> attribute) {
+        return attribute.getDeclaringType().getName() + "_" + attribute.getName() + "_index";
     }
 
     private void createIndex(QueryBuilder qb,

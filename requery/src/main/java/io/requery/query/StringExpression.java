@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 requery.io
+ * Copyright 2017 requery.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,22 @@
 
 package io.requery.query;
 
-import io.requery.query.function.Function;
-import io.requery.query.function.Max;
-import io.requery.query.function.Min;
+import io.requery.query.function.Lower;
+import io.requery.query.function.Substr;
+import io.requery.query.function.Trim;
+import io.requery.query.function.Upper;
 
-public interface Functional<V> {
+public interface StringExpression<V> {
 
-    OrderingExpression<V> asc();
+    LogicalCondition<? extends Expression<V>, ? extends Expression<V>> equalsIgnoreCase(CharSequence string);
 
-    OrderingExpression<V> desc();
+    Substr<V> substr(int offset, int length);
 
-    Max<V> max();
+    Upper<V> upper();
 
-    Min<V> min();
+    Lower<V> lower();
 
-    Function<V> function(String name);
+    Trim<V> trim(String chars);
+
+    Trim<V> trim();
 }
